@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.List;
+import com.formdev.flatlaf.FlatLightLaf;
 
 public class DynamicDBManagerGUI extends JFrame {
     private DynamicDAO dao;
@@ -16,6 +17,11 @@ public class DynamicDBManagerGUI extends JFrame {
     private DefaultListModel<String> listModel;
 
     public void start() {
+                try {
+            UIManager.setLookAndFeel(new FlatLightLaf());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         File dbFolder = new File("database");
         if (!dbFolder.exists()) {
             dbFolder.mkdirs();
@@ -518,7 +524,19 @@ public class DynamicDBManagerGUI extends JFrame {
             this.tableName = tableName;
             setLayout(new BorderLayout());
             tableModel = new DefaultTableModel();
-            table = new JTable(tableModel);
+table = new JTable(tableModel) {
+    @Override
+    public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+        Component c = super.prepareRenderer(renderer, row, column);
+        if (!isRowSelected(row)) {
+            c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(245, 245, 245));
+        }
+        return c;
+    }
+};
+table.setRowHeight(24);
+table.setShowGrid(false);
+table.setIntercellSpacing(new Dimension(0, 0));
             add(new JScrollPane(table), BorderLayout.CENTER);
             refreshTable();
         }

@@ -21,5 +21,5 @@ if /i "%confirm%"=="y" (
 
 :run_app
 echo Running the application...
-java --enable-native-access=ALL-UNNAMED -cp "lib\sqlite-jdbc.jar;lib\slf4j-api.jar;lib\slf4j-simple.jar;src" Main %*
+java --enable-native-access=ALL-UNNAMED -cp "lib\flatlaf-3.5.4.jar;lib\sqlite-jdbc.jar;lib\slf4j-api.jar;lib\slf4j-simple.jar;src" Main %*
 endlocal

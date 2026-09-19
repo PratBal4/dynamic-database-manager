@@ -22,5 +22,5 @@ if ! command -v javac &> /dev/null; then
 fi
 
 echo "Compiling the project..."
-javac -cp "lib/sqlite-jdbc.jar:lib/slf4j-api.jar:lib/slf4j-simple.jar" src/*.java
+javac -cp "lib/flatlaf-3.5.4.jar:lib/sqlite-jdbc.jar:lib/slf4j-api.jar:lib/slf4j-simple.jar" src/*.java
 echo "Compilation completed successfully."

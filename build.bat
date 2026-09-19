@@ -21,7 +21,7 @@ if /i "%confirm%"=="y" (
 
 :compile
 echo Compiling the project...
-javac -cp "lib\sqlite-jdbc.jar;lib\slf4j-api.jar;lib\slf4j-simple.jar" src\*.java
+javac -cp "lib\flatlaf-3.5.4.jar;lib\sqlite-jdbc.jar;lib\slf4j-api.jar;lib\slf4j-simple.jar" src\*.java
 if %errorlevel% neq 0 (
     echo Compilation failed.
     exit /b %errorlevel%
