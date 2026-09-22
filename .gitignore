@@ -14,3 +14,15 @@
 Thumbs.db
 database/
 screenshots/
+
+# Maven build artifacts
+target/
+dependency-reduced-pom.xml
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# MCP runtime status
+.mcp_running

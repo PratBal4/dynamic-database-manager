@@ -88,8 +88,9 @@ public class DynamicDBManagerGUI extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // Top Panel: Actions for active tab
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Top Container: Actions for active tab on the left, MCP server status badge on the right
+        JPanel topContainer = new JPanel(new BorderLayout());
+        JPanel leftActions = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton switchDbBtn = new JButton("Switch Database");
         JButton refreshBtn = new JButton("Refresh Data");
         JButton searchBtn = new JButton("Advanced Search");
@@ -112,18 +113,65 @@ public class DynamicDBManagerGUI extends JFrame {
         editBtn.addActionListener(e -> openRecordPanel(true));
         deleteBtn.addActionListener(e -> deleteSelectedRecord());
 
-        topPanel.add(switchDbBtn);
-        topPanel.add(new JSeparator(SwingConstants.VERTICAL));
-        topPanel.add(refreshBtn);
-        topPanel.add(new JSeparator(SwingConstants.VERTICAL));
-        topPanel.add(addBtn);
-        topPanel.add(editBtn);
-        topPanel.add(deleteBtn);
-        topPanel.add(new JSeparator(SwingConstants.VERTICAL));
-        topPanel.add(searchBtn);
-        topPanel.add(clearSearchBtn);
+        leftActions.add(switchDbBtn);
+        leftActions.add(new JSeparator(SwingConstants.VERTICAL));
+        leftActions.add(refreshBtn);
+        leftActions.add(new JSeparator(SwingConstants.VERTICAL));
+        leftActions.add(addBtn);
+        leftActions.add(editBtn);
+        leftActions.add(deleteBtn);
+        leftActions.add(new JSeparator(SwingConstants.VERTICAL));
+        leftActions.add(searchBtn);
+        leftActions.add(clearSearchBtn);
 
-        add(topPanel, BorderLayout.NORTH);
+        // Top-right MCP server status badge
+        JPanel rightStatus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        Icon greenDot = new StatusDotIcon(new Color(35, 175, 75), 10);
+        Icon grayDot = new StatusDotIcon(new Color(150, 150, 150), 10);
+
+        JLabel mcpStatusBadge = new JLabel("MCP Server: Offline", grayDot, SwingConstants.LEFT);
+        mcpStatusBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        mcpStatusBadge.setOpaque(true);
+        mcpStatusBadge.setBackground(new Color(245, 245, 245));
+        mcpStatusBadge.setForeground(new Color(110, 110, 110));
+        mcpStatusBadge.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
+                BorderFactory.createEmptyBorder(4, 10, 4, 10)
+        ));
+        mcpStatusBadge.setToolTipText("Status of MCP server for AI clients (e.g. Claude Desktop)");
+        rightStatus.add(mcpStatusBadge);
+
+        topContainer.add(leftActions, BorderLayout.CENTER);
+        topContainer.add(rightStatus, BorderLayout.EAST);
+        add(topContainer, BorderLayout.NORTH);
+
+        // Periodic timer to update MCP server status without blocking UI
+        javax.swing.Timer mcpTimer = new javax.swing.Timer(2000, e -> {
+            boolean running = isMcpRunning();
+            if (running) {
+                mcpStatusBadge.setIcon(greenDot);
+                mcpStatusBadge.setText("MCP Server: Online");
+                mcpStatusBadge.setForeground(new Color(20, 130, 50));
+                mcpStatusBadge.setBackground(new Color(230, 248, 235));
+                mcpStatusBadge.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(110, 205, 140), 1, true),
+                        BorderFactory.createEmptyBorder(4, 10, 4, 10)
+                ));
+                mcpStatusBadge.setToolTipText("MCP Server is running! AI models (Claude Desktop) can query this database.");
+            } else {
+                mcpStatusBadge.setIcon(grayDot);
+                mcpStatusBadge.setText("MCP Server: Offline");
+                mcpStatusBadge.setForeground(new Color(110, 110, 110));
+                mcpStatusBadge.setBackground(new Color(245, 245, 245));
+                mcpStatusBadge.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
+                        BorderFactory.createEmptyBorder(4, 10, 4, 10)
+                ));
+                mcpStatusBadge.setToolTipText("MCP Server is offline. Start via Claude Desktop or McpServerMain.");
+            }
+        });
+        mcpTimer.setInitialDelay(200);
+        mcpTimer.start();
 
         // Center Panel: Tabbed Pane
         tabbedPane = new JTabbedPane();
@@ -612,6 +660,55 @@ public class DynamicDBManagerGUI extends JFrame {
                     ((TableTabPanel) c).refreshTable();
                 }
             }
+        }
+    }
+
+    private boolean isMcpRunning() {
+        try {
+            File statusFile = McpServerMain.getStatusFile();
+            if (statusFile != null && statusFile.exists()) {
+                String content = Files.readString(statusFile.toPath()).trim();
+                if (!content.isEmpty()) {
+                    long pid = Long.parseLong(content);
+                    return ProcessHandle.of(pid).filter(ProcessHandle::isAlive).isPresent();
+                }
+                return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    // Custom Icon that paints a bright, crisp anti-aliased circular status dot
+    private static class StatusDotIcon implements Icon {
+        private final Color color;
+        private final int size;
+
+        public StatusDotIcon(Color color, int size) {
+            this.color = color;
+            this.size = size;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            // Subtle outer glow/halo
+            g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 60));
+            g2.fillOval(x, y, size + 2, size + 2);
+            // Core colored dot
+            g2.setColor(color);
+            g2.fillOval(x + 1, y + 1, size, size);
+            g2.dispose();
+        }
+
+        @Override
+        public int getIconWidth() {
+            return size + 4;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return size + 4;
         }
     }
 }
